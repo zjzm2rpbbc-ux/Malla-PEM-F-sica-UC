@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pedagogía en Física</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+    font-family:'Poppins', sans-serif;
+    background:#fff4f9;
+    margin:0;
+    padding:30px;
+}
+
+h1{
+    text-align:center;
+    font-weight:600;
+    color:#c2185b;
+    margin-bottom:15px;
+}
+
+.progreso-general{
+    width:60%;
+    margin:0 auto 30px auto;
+}
+
+.barra{
+    background:#f8c8dc;
+    border-radius:30px;
+    height:18px;
+    overflow:hidden;
+}
+
+.barra-fill{
+    height:100%;
+    width:0%;
+    background:#9c27b0;
+    transition:0.5s ease;
+}
+
+.container{
+    display:flex;
+    overflow-x:auto;
+}
+
+.semestre{
+    background:white;
+    border-radius:20px;
+    padding:15px;
+    margin:10px;
+    min-width:270px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+}
+
+.semestre h3{
+    font-weight:600;
+    font-size:16px;
+    margin-bottom:10px;
+}
+
+.progreso-sem{
+    font-size:12px;
+    margin-bottom:10px;
+    color:#9c27b0;
+}
+
+.ramo{
+    padding:8px 10px;
+    border-radius:12px;
+    margin:6px 0;
+    font-size:13px;
+    cursor:pointer;
+    transition:0.3s ease;
+    position:relative;
+}
+
+.no-aprobado{
+    background:#f8bbd0;
+}
+
+.aprobado{
+    background:#9c27b0;
+    color:white;
+}
+
+.aprobado::after{
+    content:"";
+    position:absolute;
+    left:10px;
+    right:10px;
+    top:50%;
+    height:2px;
+    background:white;
+    transform:scaleX(0);
+    transform-origin:left;
+    animation:tachado 0.3s forwards;
+}
+
+@keyframes tachado{
+    to{ transform:scaleX(1); }
+}
+
+.bloqueado{
+    background:#e0e0e0;
+    opacity:0.6;
+    cursor:not-allowed;
+}
+
+button{
+    display:block;
+    margin:30px auto;
+    padding:10px 25px;
+    border:none;
+    border-radius:30px;
+    background:#c2185b;
+    color:white;
+    font-family:'Poppins';
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#9c27b0;
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+    <p class="universidad">UNIVERSIDAD ________</p>
+    <h1>Pedagogía en Física</h1>
+</div>
+
+<div class="progreso-general">
+    <div class="barra">
+        <div class="barra-fill" id="barraFill"></div>
+    </div>
+    <p style="text-align:center;font-size:13px;margin-top:5px;" id="porcentajeGeneral"></p>
+</div>
+
+<div class="container" id="malla"></div>
+
+<button onclick="resetear()">Resetear Malla</button>
+
+<script>
+
+const ramos = [
+
+/* SEMESTRE 1 */
+{sem:1,id:"intro-ensenanza",nombre:"Introducción a la Enseñanza de la Física"},
+{sem:1,id:"algebra-geo",nombre:"Álgebra y Geometría"},
+{sem:1,id:"intro-fisica",nombre:"Introducción a la Física"},
+{sem:1,id:"calculo1",nombre:"Cálculo I"},
+{sem:1,id:"electivo-filo",nombre:"Electivo Filosofía"},
+
+/* SEMESTRE 2 */
+{sem:2,id:"teoria-educacion",nombre:"Teoría de la Educación"},
+{sem:2,id:"fisica-exp1",nombre:"Física Experimental I",prereq:["intro-fisica"]},
+{sem:2,id:"calculo2",nombre:"Cálculo II",prereq:["calculo1"]},
+{sem:2,id:"mecanica1",nombre:"Mecánica Clásica I",coreq:["calculo2"]},
+{sem:2,id:"algebra-lineal",nombre:"Álgebra Lineal"},
+
+/* SEMESTRE 3 */
+{sem:3,id:"calculo3",nombre:"Cálculo III",prereq:["calculo2"]},
+{sem:3,id:"edo",nombre:"Ecuaciones Diferenciales",prereq:["algebra-lineal","calculo2"]},
+{sem:3,id:"termo",nombre:"Termodinámica y Teoría Cinética",prereq:["mecanica1"],coreq:["calculo3"]},
+{sem:3,id:"educacion-sociedad",nombre:"Educación y Sociedad"},
+{sem:3,id:"electivo-teologia",nombre:"Electivo Teología"},
+
+/* SEMESTRE 4 */
+{sem:4,id:"desarrollo",nombre:"Desarrollo y Aprendizaje del Adolescente"},
+{sem:4,id:"mecanica2",nombre:"Mecánica Clásica II",prereq:["mecanica1","edo"]},
+{sem:4,id:"practica1",nombre:"Práctica 1",coreq:["desarrollo"]},
+{sem:4,id:"eym",nombre:"Electricidad y Magnetismo",prereq:["mecanica1","calculo3"]},
+{sem:4,id:"electivo-fg1",nombre:"Electivo Formación General"},
+{sem:4,id:"fisica-exp2",nombre:"Física Experimental II",prereq:["fisica-exp1"],coreq:["eym","termo"]},
+
+/* SEMESTRE 5 */
+{sem:5,id:"ondas",nombre:"Ondas y Óptica",prereq:["fisica-exp2","mecanica1"]},
+{sem:5,id:"moderna",nombre:"Física Moderna",prereq:["eym","edo","termo"]},
+{sem:5,id:"diversidad",nombre:"Diversidad e Inclusión en Educación"},
+{sem:5,id:"desafios",nombre:"Desafíos de la Enseñanza y Aprendizaje de la Física",prereq:["mecanica1"]},
+{sem:5,id:"electivo-fg2",nombre:"Electivo Formación General"},
+
+/* SEMESTRE 6 */
+{sem:6,id:"diseno",nombre:"Diseño de Ambientes y Aprendizaje de la Física",prereq:["desafios","termo"]},
+{sem:6,id:"curriculum",nombre:"Curriculum"},
+{sem:6,id:"didactica1",nombre:"Didáctica de la Física I",prereq:["educacion-sociedad","desarrollo","curriculum"],coreq:["practica2"]},
+{sem:6,id:"practica2",nombre:"Práctica 2",prereq:["practica1"],coreq:["didactica1"]},
+{sem:6,id:"electivo6",nombre:"Electivo"},
+
+/* SEMESTRE 7 */
+{sem:7,id:"astronomia",nombre:"Astronomía"},
+{sem:7,id:"evaluacion",nombre:"Evaluación en Educación Media"},
+{sem:7,id:"didactica2",nombre:"Didáctica de la Física II",prereq:["didactica1"],coreq:["practica3"]},
+{sem:7,id:"practica3",nombre:"Práctica 3",prereq:["practica2"],coreq:["didactica2"]},
+{sem:7,id:"electivo7",nombre:"Electivo"},
+
+/* SEMESTRE 8 */
+{sem:8,id:"seminario",nombre:"Seminario de Investigación a la Enseñanza"},
+{sem:8,id:"geografia",nombre:"Geografía Física General"},
+{sem:8,id:"gestion",nombre:"Gestión de Aulas Heterogéneas"},
+{sem:8,id:"electivo8a",nombre:"Electivo"},
+{sem:8,id:"electivo8b",nombre:"Electivo"},
+
+/* SEMESTRE 9 */
+{sem:9,id:"didactica3",nombre:"Didáctica de la Física III",prereq:["didactica2"],coreq:["pp1"]},
+{sem:9,id:"pp1",nombre:"Práctica Profesional 1",prereq:["practica3"],coreq:["didactica3"]},
+{sem:9,id:"opt1",nombre:"Optativo de Profundización"},
+{sem:9,id:"opt2",nombre:"Optativo de Profundización"},
+
+/* SEMESTRE 10 */
+{sem:10,id:"pp2",nombre:"Práctica Profesional 2",prereq:["pp1"]},
+{sem:10,id:"etica",nombre:"Dimensión Ética de la Profesión Docente"},
+{sem:10,id:"opt3",nombre:"Optativo de Profundización"},
+{sem:10,id:"opt4",nombre:"Optativo de Profundización"}
+
+];
+
+let estado = JSON.parse(localStorage.getItem("estadoMalla")) || {};
+const mallaDiv = document.getElementById("malla");
+
+function crearMalla(){
+for(let s=1;s<=10;s++){
+let semestre=document.createElement("div");
+semestre.className="semestre";
+semestre.innerHTML=`<h3>${s}° Semestre</h3>
+<div class="progreso-sem" id="prog-${s}"></div>`;
+ramos.filter(r=>r.sem===s).forEach(r=>{
+let div=document.createElement("div");
+div.className="ramo";
+div.dataset.id=r.id;
+div.innerText=r.nombre;
+semestre.appendChild(div);
+});
+mallaDiv.appendChild(semestre);
+}
+}
+
+function cumple(r){
+if(r.prereq){
+for(let p of r.prereq){
+if(!estado[p]) return false;
+}
+}
+if(r.coreq){
+for(let c of r.coreq){
+if(!estado[c]) return false;
+}
+}
+return true;
+}
+
+function actualizar(){
+
+let total=ramos.length;
+let aprobados=0;
+
+document.querySelectorAll(".ramo").forEach(div=>{
+let id=div.dataset.id;
+let ramo=ramos.find(r=>r.id===id);
+
+if(estado[id]){
+div.className="ramo aprobado";
+aprobados++;
+}
+else if(!cumple(ramo)){
+div.className="ramo bloqueado";
+}
+else{
+div.className="ramo no-aprobado";
+}
+});
+
+let porcentaje=Math.round((aprobados/total)*100);
+document.getElementById("barraFill").style.width=porcentaje+"%";
+document.getElementById("porcentajeGeneral").innerText=porcentaje+"% completado";
+
+for(let s=1;s<=10;s++){
+let totalSem=ramos.filter(r=>r.sem===s).length;
+let aprobSem=ramos.filter(r=>r.sem===s && estado[r.id]).length;
+if(totalSem>0){
+let p=Math.round((aprobSem/totalSem)*100);
+document.getElementById(`prog-${s}`).innerText=p+"% completado";
+}
+}
+}
+
+document.addEventListener("click",e=>{
+if(e.target.classList.contains("ramo")){
+if(e.target.classList.contains("bloqueado")) return;
+let id=e.target.dataset.id;
+estado[id]?delete estado[id]:estado[id]=true;
+localStorage.setItem("estadoMalla",JSON.stringify(estado));
+actualizar();
+}
+});
+
+function resetear(){
+if(confirm("¿Seguro que quieres reiniciar la malla?")){
+estado={};
+localStorage.removeItem("estadoMalla");
+actualizar();
+}
+}
+
+crearMalla();
+actualizar();
+
+</script>
+
+</body>
+</html>
